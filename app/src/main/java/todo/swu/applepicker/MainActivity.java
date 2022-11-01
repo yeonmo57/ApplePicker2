@@ -40,30 +40,30 @@ public class MainActivity extends AppCompatActivity {
 
         db = FirebaseFirestore.getInstance();
         //isDataPassing > isDataPassing > flag == true 일 경우 프래그먼트에서 데이터 받아오기
-        db.collection("isDataPassing")
-                .document("isDataPassing") //선택한 날짜에 해당하는 데이터 유무 확인
-                .get()
-                .addOnSuccessListener(snapShotData -> {
-                    if (snapShotData.exists()) {//선택한 날짜에 저장된 데이터가 있는 경우 해당 data 갖고와서 화면에 뿌려줌.
-                        //Log.e("선택한 날짜에 저장된 데이터가 있는 경우 해당 data 갖고와서 화면에 뿌려줌.", dateToday);
-
-                        String flag = (String) snapShotData.getData().get("flag");
-                        Log.e("flag 값: ", flag);
-                        try {
-                            Thread.sleep(5000);
-                            if(flag.equals("True")) {
-                                Log.e("if문 안의 flag 값: ", flag);
-                                Intent receive_intent = getIntent();
-                                String jsonResponse = receive_intent.getStringExtra("jsonResponse");
-                                Log.e("메인 액티비티", "if문 안");
-                                Log.e("전달 데이터", jsonResponse);
-                            }
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-
-                    }
-                }).addOnFailureListener(e -> e.printStackTrace());
+//        db.collection("isDataPassing")
+//                .document("isDataPassing") //선택한 날짜에 해당하는 데이터 유무 확인
+//                .get()
+//                .addOnSuccessListener(snapShotData -> {
+//                    if (snapShotData.exists()) {//선택한 날짜에 저장된 데이터가 있는 경우 해당 data 갖고와서 화면에 뿌려줌.
+//                        //Log.e("선택한 날짜에 저장된 데이터가 있는 경우 해당 data 갖고와서 화면에 뿌려줌.", dateToday);
+//
+//                        String flag = (String) snapShotData.getData().get("flag");
+//                        Log.e("flag 값: ", flag);
+//                        try {
+//                            Thread.sleep(5000);
+//                            if(flag.equals("True")) {
+//                                Log.e("if문 안의 flag 값: ", flag);
+//                                Intent receive_intent = getIntent();
+//                                String jsonResponse = receive_intent.getStringExtra("jsonResponse");
+//                                Log.e("메인 액티비티", "if문 안");
+//                                Log.e("전달 데이터", jsonResponse);
+//                            }
+//                        } catch (InterruptedException e) {
+//                            e.printStackTrace();
+//                        }
+//
+//                    }
+//                }).addOnFailureListener(e -> e.printStackTrace());
 
 
         ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, MODE_PRIVATE);
