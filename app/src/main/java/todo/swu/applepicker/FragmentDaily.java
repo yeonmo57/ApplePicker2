@@ -85,23 +85,23 @@ public class FragmentDaily extends Fragment {
         //Access a Firestore
         db = FirebaseFirestore.getInstance();
 
-        db.collection("isDataPassing")
-                .document("isDataPassing") //선택한 날짜에 해당하는 데이터 유무 확인
-                .get()
-                .addOnSuccessListener(snapShotData -> {
-                    if (snapShotData.exists()) {//선택한 날짜에 저장된 데이터가 있는 경우 해당 data 갖고와서 화면에 뿌려줌.
-                        //Log.e("선택한 날짜에 저장된 데이터가 있는 경우 해당 data 갖고와서 화면에 뿌려줌.", dateToday);
-
-                        String flag = (String) snapShotData.getData().get("flag");
-                        Log.e("flag 값: ", flag);
-
-                        if(flag.equals("True")) {
-
-
-                            Log.e("데일리 프레그먼트", "if문 안");
-                        }
-                    }
-                }).addOnFailureListener(e -> e.printStackTrace());
+//        db.collection("isDataPassing")
+//                .document("isDataPassing") //선택한 날짜에 해당하는 데이터 유무 확인
+//                .get()
+//                .addOnSuccessListener(snapShotData -> {
+//                    if (snapShotData.exists()) {//선택한 날짜에 저장된 데이터가 있는 경우 해당 data 갖고와서 화면에 뿌려줌.
+//                        //Log.e("선택한 날짜에 저장된 데이터가 있는 경우 해당 data 갖고와서 화면에 뿌려줌.", dateToday);
+//
+//                        String flag = (String) snapShotData.getData().get("flag");
+//                        Log.e("flag 값: ", flag);
+//
+//                        if(flag.equals("True")) {
+//
+//
+//                            Log.e("데일리 프레그먼트", "if문 안");
+//                        }
+//                    }
+//                }).addOnFailureListener(e -> e.printStackTrace());
 
 
         //Task RecyclerView에 표시할 데이터 리스트 생성.
