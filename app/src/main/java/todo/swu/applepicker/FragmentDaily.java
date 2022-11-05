@@ -56,17 +56,22 @@ public class FragmentDaily extends Fragment {
     EditText edit_part;
      */
     EditText edit_memo;
-/*
-    ImageButton iButton_task_add;
 
- */
+    //ImageButton iButton_task_add;
+
     ImageButton iButton_memo_add;
 
     FirebaseFirestore db;
     Map<String, Object> dailyMap;
     static String currentDate;
 
+    RecyclerView memoRecyclerView;
+    //데베 종속 버전
     ArrayList<MemoItem> memoItemList;
+    //임시
+    //ArrayList<String> memoItemList;
+    //ListView memolistview;
+    //TaskAdapter taskAdapter;
     MemoAdapter memoAdapter;
 
     @Override
@@ -239,18 +244,22 @@ public class FragmentDaily extends Fragment {
 
         iButton_memo_add.setOnClickListener(v -> {
             // 리사이클러뷰에 SimpleTextAdapter 객체 지정.
-            /*
-            Timestamp timestamp = Timestamp.now();
-            memoItemList.add(new TaskItem(timestamp, edit_subject.getText().toString(),
-                    edit_part.getText().toString(), false));
 
-            addMemoDB(timestamp);
-            EventChangeListener();
+            Timestamp timestamp = Timestamp.now();
+            memoItemList.add(new MemoItem(edit_memo.getText().toString()));
+
+            //addMemoDB(timestamp);
+            //EventChangeListener();
+            memoAdapter.notifyDataSetChanged();
+            /*
+            memoAdapter = new MemoAdapter(memoItemList);
+            memoRecyclerView.setAdapter(memoAdapter);
+
+             */
             Log.e(TAG, "DB에 Task 저장됨 => ");
 
-            edit_subject.setText(null);
-            edit_part.setText(null);
-            */
+            edit_memo.setText(null);
+
         });
 
         // Inflate the layout for this fragment
