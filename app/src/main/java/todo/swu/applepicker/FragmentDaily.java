@@ -69,11 +69,28 @@ public class FragmentDaily extends Fragment {
     ArrayList<MemoItem> memoItemList;
     MemoAdapter memoAdapter;
 
+    private boolean firstStart = true;
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
 
         View myView = inflater.inflate(R.layout.fragment_daily, container, false);
+        //View myView = inflater.inflate(R.layout.container_daily, container, false);
+        //Log.e("0:", "[FragmentDaily] test1");
+//Attempt to invoke virtual method 'java.lang.String android.os.Bundle.getString(java.lang.String)' on a null object reference
+//        if(!firstStart)
+//        {
+//            Log.e("0:", "[FragmentDaily] test2");
+//
+//            //넘어온 메시지 변수에 담기
+//            String message = this.getArguments().getString("message");
+//            Log.e("0:", "[FragmentDaily] test3");
+//            //메시지 텍스트뷰에 담기
+//            edit_memo.setText(message);
+
+//        }
+
+
 
         //이 버튼을 클릭하면 달력이 호출됨.
         iButton_calendar = (ImageButton) myView.findViewById(R.id.iButton_calendar);
@@ -254,6 +271,7 @@ public class FragmentDaily extends Fragment {
         });
 
         // Inflate the layout for this fragment
+        //firstStart=false;
         return myView;
     } //onCreateView End.
 
@@ -274,6 +292,7 @@ public class FragmentDaily extends Fragment {
         dailyMap.put("date", dateToday);
 
 
+        // 불러오기
         //오늘 날짜에 저장된 데이터 불러와서 EditText에 setText()하기
         db.collection("daily")
             .document(dateToday)//선택한 날짜에 해당하는 데이터 유무 확인
@@ -283,7 +302,8 @@ public class FragmentDaily extends Fragment {
                     Log.e("선택한 날짜에 저장된 데이터가 있는 경우 해당 data 갖고와서 화면에 뿌려줌.", dateToday);
 
                     String memoItem = (String) snapShotData.getData().get("memoItem");
-                    
+
+
                     // 메모 에디터 텍스트
                     edit_memo.setText(dateToday);
 
