@@ -69,26 +69,12 @@ public class FragmentDaily extends Fragment {
     ArrayList<MemoItem> memoItemList;
     MemoAdapter memoAdapter;
 
-    private boolean firstStart = true;
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
 
         View myView = inflater.inflate(R.layout.fragment_daily, container, false);
-        //View myView = inflater.inflate(R.layout.container_daily, container, false);
-        //Log.e("0:", "[FragmentDaily] test1");
-//Attempt to invoke virtual method 'java.lang.String android.os.Bundle.getString(java.lang.String)' on a null object reference
-//        if(!firstStart)
-//        {
-//            Log.e("0:", "[FragmentDaily] test2");
-//
-//            //넘어온 메시지 변수에 담기
-//            String message = this.getArguments().getString("message");
-//            Log.e("0:", "[FragmentDaily] test3");
-//            //메시지 텍스트뷰에 담기
-//            edit_memo.setText(message);
-
-//        }
 
 
 

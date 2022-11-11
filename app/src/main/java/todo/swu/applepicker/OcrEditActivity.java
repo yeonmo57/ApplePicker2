@@ -75,6 +75,14 @@ public class OcrEditActivity extends AppCompatActivity {
         // OCR 글자들 모음 List
         inferTextList = jsonParsing(jsonResponse);
         resultData = inferTextList.toString();
+        
+        // 대괄호 없애기
+        resultData = removeChar(resultData, 0);
+        resultData = removeChar(resultData, resultData.length()-1);
+
+        // 쉼표 없애기
+        resultData= resultData.replace(",", "");
+
         Log.e("test", "json 파싱 실행 후");
         Log.e(inferTextList.toString(), "inferTextList");
         Log.e(imagePath.toString(), "imagePath");
@@ -128,29 +136,29 @@ public class OcrEditActivity extends AppCompatActivity {
                 }).addOnFailureListener(e -> e.printStackTrace());
 
 
-        //db = FirebaseFirestore.getInstance();
+        db = FirebaseFirestore.getInstance();
         //isDataPassing > isDataPassing > flag == true 일 경우 프래그먼트에서 데이터 받아오기
-//        db.collection("isDataPassing")
-//                .document("isDataPassing") //선택한 날짜에 해당하는 데이터 유무 확인
-//                .get()
-//                .addOnSuccessListener(snapShotData -> {
-//                    if (snapShotData.exists()) {//선택한 날짜에 저장된 데이터가 있는 경우 해당 data 갖고와서 화면에 뿌려줌.
-//                        //Log.e("선택한 날짜에 저장된 데이터가 있는 경우 해당 data 갖고와서 화면에 뿌려줌.", dateToday);
-//
-//                        String flag = (String) snapShotData.getData().get("flag");
-//                        Log.e("flag 값: ", flag);
-//                        try {
-//                            Thread.sleep(5000);
-//                            if(flag.equals("True")) {
-//                                Log.e("if문 안의 flag 값: ", flag);
-//
-//                            }
-//                        } catch (InterruptedException e) {
-//                            e.printStackTrace();
-//                        }
-//
-//                    }
-//                }).addOnFailureListener(e -> e.printStackTrace());
+        db.collection("isDataPassing")
+                .document("isDataPassing") //선택한 날짜에 해당하는 데이터 유무 확인
+                .get()
+                .addOnSuccessListener(snapShotData -> {
+                    if (snapShotData.exists()) {//선택한 날짜에 저장된 데이터가 있는 경우 해당 data 갖고와서 화면에 뿌려줌.
+                        //Log.e("선택한 날짜에 저장된 데이터가 있는 경우 해당 data 갖고와서 화면에 뿌려줌.", dateToday);
+
+                        String flag = (String) snapShotData.getData().get("flag");
+                        Log.e("flag 값: ", flag);
+                        try {
+                            Thread.sleep(5000);
+                            if(flag.equals("True")) {
+                                Log.e("if문 안의 flag 값: ", flag);
+
+                            }
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+
+                    }
+                }).addOnFailureListener(e -> e.printStackTrace());
         saved_memo.setText("메모 저장 완료!");
     }
 

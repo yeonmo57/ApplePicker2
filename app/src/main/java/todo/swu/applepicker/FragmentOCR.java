@@ -62,7 +62,7 @@ public class FragmentOCR extends Fragment {
                 @Override
                 public void onActivityResult(Uri result) {
                     if (result != null) {
-                        ocrImageView.setImageURI(result);
+                        //ocrImageView.setImageURI(result);
 
                         String imagePath = getPathFromUri(getActivity(), result);
                         Log.e(imagePath, "URI에서 변환한 이미지의 절대경로");
