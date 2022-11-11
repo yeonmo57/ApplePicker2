@@ -5,6 +5,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
 
 import android.Manifest;
 import android.content.Intent;
@@ -37,7 +38,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
+        //Log.e("mainActivity", "test1");
         db = FirebaseFirestore.getInstance();
         //isDataPassing > isDataPassing > flag == true 일 경우 프래그먼트에서 데이터 받아오기
 //        db.collection("isDataPassing")
@@ -68,7 +69,9 @@ public class MainActivity extends AppCompatActivity {
 
         ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, MODE_PRIVATE);
         Log.e(this.getClass().getName(), "mainActivity 실행");
+        //Log.e("0:", "test mainActivity2");
 
+        //Log.e("mainActivity", "test mainActivity3");
         tv_title = (TextView)findViewById(R.id.tv_title);
         fragmentDaily = new FragmentDaily();
 
@@ -76,6 +79,7 @@ public class MainActivity extends AppCompatActivity {
         fragmentManager.beginTransaction().replace(R.id.container, fragmentDaily, "fragment_daily").commit();
         // 초기화면 설정
 
+        //Log.e("0:", "test mainActivity4");
         BottomNavigationView bottomNavigationView = findViewById(R.id.bottomNavigationView);
         bottomNavigationView.setOnItemSelectedListener(
                 item -> {
