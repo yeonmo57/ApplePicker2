@@ -8,16 +8,22 @@ import android.widget.EditText;
 
 
 import java.util.ArrayList;
+import java.util.List;
 
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.firebase.firestore.FirebaseFirestore;
+
 public class MemoAdapter extends RecyclerView.Adapter<MemoAdapter.ViewHolder> {
 
-    private ArrayList<MemoItem> mMemoList = null;
+    //기존: mMemoList 수정: memoList
+    private ArrayList<MemoItem> memoList = null;
+    MemoItem itemForListener;
+    FirebaseFirestore db;
 
     // 생성자에서 데이터 리스트 객체를 전달받음.
     MemoAdapter(ArrayList<MemoItem> list) {
-        mMemoList = list;
+        this.memoList = list;
     }
 
     // onCreateViewHolder() - 아이템 뷰를 위한 뷰홀더 객체 생성하여 리턴.
@@ -27,15 +33,19 @@ public class MemoAdapter extends RecyclerView.Adapter<MemoAdapter.ViewHolder> {
         LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 
         View view = inflater.inflate(R.layout.recyclerview_memo_item, parent, false);
-        MemoAdapter.ViewHolder vh = new MemoAdapter.ViewHolder(view);
+        //MemoAdapter.ViewHolder vh = new MemoAdapter.ViewHolder(view);
 
-        return vh;
+        //return vh;
+        db = FirebaseFirestore.getInstance();
+        return new MemoAdapter.ViewHolder(view);
     }
 
     // onBindViewHolder() - position에 해당하는 데이터를 뷰홀더의 아이템뷰에 표시.
     @Override
     public void onBindViewHolder(MemoAdapter.ViewHolder holder, int position) {
         //holder.onBind(mMemoList.get(position));
+        itemForListener = memoList.get(position);
+        holder.onBind(memoList.get(position));
     }
 
     // 아이템 뷰를 저장하는 뷰홀더 클래스.
@@ -49,22 +59,26 @@ public class MemoAdapter extends RecyclerView.Adapter<MemoAdapter.ViewHolder> {
             // 뷰 객체에 대한 참조.
             edit_memo = (EditText)itemView.findViewById(R.id.edit_memo);
 
+            //사과 클릭(achievement) 기능 들어갈 부분
         }
 
         void onBind(MemoItem item){
-//            edit_memo.setText(item.getUser_name());
+            edit_memo.setText(item.getMemo());
         }
     }
 
     public void setPostList(ArrayList<MemoItem> list){
-        this.mMemoList = list;
-        notifyDataSetChanged();
+        this.memoList = list;
+        //수정하기
+        //notifyDataSetChanged();
     }
+
+
 
     // getItemCount() - 전체 데이터 개수 리턴.
     @Override
     public int getItemCount() {
-        return mMemoList.size();
+        return memoList.size();
     }
 }
 

@@ -7,6 +7,9 @@ public class MemoItem {
     String memo;
     boolean achievement;
 
+    //빈 생성자 추가
+    public MemoItem(){}
+
     public MemoItem(Timestamp timestamp, String memo,boolean achievement) {
         this.timestamp = timestamp;
         this.memo = memo;
