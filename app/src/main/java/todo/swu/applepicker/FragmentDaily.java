@@ -56,17 +56,22 @@ public class FragmentDaily extends Fragment {
     EditText edit_part;
      */
     EditText edit_memo;
-/*
-    ImageButton iButton_task_add;
 
- */
+    //ImageButton iButton_task_add;
+
     ImageButton iButton_memo_add;
 
     FirebaseFirestore db;
     Map<String, Object> dailyMap;
+
     static String currentDate;
 
+    RecyclerView memoRecyclerView;
+
     ArrayList<MemoItem> memoItemList;
+
+    //ListView memolistview;
+    //TaskAdapter taskAdapter;
     MemoAdapter memoAdapter;
 
 
@@ -88,23 +93,23 @@ public class FragmentDaily extends Fragment {
         //Access a Firestore
         db = FirebaseFirestore.getInstance();
 
-//        db.collection("isDataPassing")
-//                .document("isDataPassing") //선택한 날짜에 해당하는 데이터 유무 확인
-//                .get()
-//                .addOnSuccessListener(snapShotData -> {
-//                    if (snapShotData.exists()) {//선택한 날짜에 저장된 데이터가 있는 경우 해당 data 갖고와서 화면에 뿌려줌.
-//                        //Log.e("선택한 날짜에 저장된 데이터가 있는 경우 해당 data 갖고와서 화면에 뿌려줌.", dateToday);
-//
-//                        String flag = (String) snapShotData.getData().get("flag");
-//                        Log.e("flag 값: ", flag);
-//
-//                        if(flag.equals("True")) {
-//
-//
-//                            Log.e("데일리 프레그먼트", "if문 안");
-//                        }
-//                    }
-//                }).addOnFailureListener(e -> e.printStackTrace());
+        db.collection("isDataPassing")
+                .document("isDataPassing") //선택한 날짜에 해당하는 데이터 유무 확인
+                .get()
+                .addOnSuccessListener(snapShotData -> {
+                    if (snapShotData.exists()) {//선택한 날짜에 저장된 데이터가 있는 경우 해당 data 갖고와서 화면에 뿌려줌.
+                        //Log.e("선택한 날짜에 저장된 데이터가 있는 경우 해당 data 갖고와서 화면에 뿌려줌.", dateToday);
+
+                        String flag = (String) snapShotData.getData().get("flag");
+                        Log.e("flag 값: ", flag);
+
+                        if(flag.equals("True")) {
+
+
+                            Log.e("데일리 프레그먼트", "if문 안");
+                        }
+                    }
+                }).addOnFailureListener(e -> e.printStackTrace());
 
 
         //Task RecyclerView에 표시할 데이터 리스트 생성.
@@ -224,6 +229,19 @@ public class FragmentDaily extends Fragment {
 
          */
 
+        edit_memo.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+            }
+            @Override
+            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+            }
+            @Override
+            public void afterTextChanged(Editable editable) {
+                edit_memo.setBackground(null);
+            }
+        });
+
 /*
         iButton_task_add.setOnClickListener(v -> {
             Timestamp timestamp = Timestamp.now();
@@ -242,23 +260,28 @@ public class FragmentDaily extends Fragment {
 
         iButton_memo_add.setOnClickListener(v -> {
             // 리사이클러뷰에 SimpleTextAdapter 객체 지정.
-            /*
+
             Timestamp timestamp = Timestamp.now();
-            memoItemList.add(new TaskItem(timestamp, edit_subject.getText().toString(),
-                    edit_part.getText().toString(), false));
+            memoItemList.add(new MemoItem(timestamp,edit_memo.getText().toString(), false));
 
             addMemoDB(timestamp);
             EventChangeListener();
+            //내가 추가함
+            memoAdapter.notifyDataSetChanged();
+            /*
+            memoAdapter = new MemoAdapter(memoItemList);
+            memoRecyclerView.setAdapter(memoAdapter);
+             */
             Log.e(TAG, "DB에 Task 저장됨 => ");
 
-            edit_subject.setText(null);
-            edit_part.setText(null);
-            */
+            edit_memo.setText(null);
+            //Log.e(TAG, "setText 널");
         });
 
         // Inflate the layout for this fragment
-        //firstStart=false;
+
         return myView;
+
     } //onCreateView End.
 
 
@@ -324,8 +347,27 @@ public class FragmentDaily extends Fragment {
                 }
             }
         });
-
          */
+
+        //오늘 날짜에 저장된 데이터 불러와 RecyclerView 2개에 setText()하기
+        Query query = db.collection("daily").document(dateToday)
+                .collection("memo").orderBy("createdAt");
+        query.get().addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+            @Override
+            public void onComplete(@NonNull Task<QuerySnapshot> memo) {
+                if (memo.isSuccessful()) {
+                    for (QueryDocumentSnapshot doc : memo.getResult()) {
+                        MemoItem obj = doc.toObject(MemoItem.class);
+                        memoItemList.add(obj);
+                    }
+                    memoAdapter.notifyDataSetChanged();
+                } else {
+                    Log.e(TAG, "Recyclerview 초기화 else 부분");
+                }
+            }
+        });
+
+
     }
 
 
@@ -347,9 +389,11 @@ public class FragmentDaily extends Fragment {
                 if (snapShotData.exists()) {//선택한 날짜에 저장된 데이터가 있는 경우 해당 data 갖고와서 화면에 뿌려줌.
                     Log.e("선택한 날짜에 저장된 데이터가 있는 경우 해당 data 갖고와서 화면에 뿌려줌.", currentDate);
                     String dDay = snapShotData.getString("dDay");
+
+                    //여기 수정하기
                     // String comment = snapShotData.getString("comment");
                     // String totalTime = snapShotData.getString("totalTime");
-                    //
+
 
                     //edit_dDay.setText(dDay);
                     //edit_comment.setText(comment);
@@ -391,6 +435,28 @@ public class FragmentDaily extends Fragment {
 
          */
 
+        //Memo
+        memoItemList = new ArrayList<MemoItem>();
+        db.collection("daily").document(datePicked)
+            .collection("memoItem").orderBy("createdAt")
+            .addSnapshotListener(new EventListener<QuerySnapshot>() {
+                @Override
+                public void onEvent(@Nullable QuerySnapshot value, @Nullable FirebaseFirestoreException error) {
+                    if (error != null) {
+                        Log.e("Firestore Error", error.getMessage());
+                    }
+                    for (DocumentSnapshot dc : value.getDocuments()) {
+                        MemoItem obj = dc.toObject(MemoItem.class);
+                        memoItemList.add(obj);
+                    }
+                    //taskAdapter.notifyDataSetChanged();
+                    memoAdapter = new MemoAdapter(memoItemList);
+                    memoRecyclerView.setAdapter(memoAdapter);
+                }
+            });
+
+
+
     }
 
     //EditText 3개에 변경사항 생길때마다 DB 업데이트함.
@@ -410,15 +476,13 @@ public class FragmentDaily extends Fragment {
     //RecyclerView Task에 입력&변경사항 생길때마다 DB 업데이트함.
     @SuppressLint("LongLogTag")
     public void addTaskDB(Timestamp timestamp) {
-        Map<String, Object> taskMap = new HashMap<>();
+        Map<String, Object> taskMap = new HahMap<>();
         taskMap.put("createdAt", timestamp);
-        /*
+
         taskMap.put("subject", edit_subject.getText().toString());
         taskMap.put("part", edit_part.getText().toString());
         taskMap.put("achievement", false);
 
-        */
-/*
         //task 업데이트.
         db.collection("daily").document(currentDate)
             .collection("task")
@@ -429,8 +493,27 @@ public class FragmentDaily extends Fragment {
                 Log.e(TAG, "Error adding document", e);
             });
     }
-
  */
+
+    //RecyclerView Memo에 입력&변경사항 생길때마다 DB 업데이트함.
+    @SuppressLint("LongLogTag")
+    public void addMemoDB(Timestamp timestamp) {
+        Map<String, Object> memoMap = new HashMap<>();
+        memoMap.put("createdAt", timestamp);
+
+        memoMap.put("memo", edit_memo.getText().toString());
+        memoMap.put("achievement", false);
+
+        //task 업데이트.
+        db.collection("daily").document(currentDate)
+            .collection("memo")
+            .document(timestamp.toString()).set(memoMap)
+            .addOnSuccessListener(documentReference -> {
+                Log.e(TAG, "DocumentSnapshot added with ID: ");
+            }).addOnFailureListener(e -> {
+                Log.e(TAG, "Error adding document", e);
+            });
+    }
 
 
     //오늘 날짜 얻기.
@@ -491,5 +574,26 @@ public class FragmentDaily extends Fragment {
 
  */
 
+    //Memo로 수정
+    public void EventChangeListener() {
+        memoItemList = new ArrayList<MemoItem>();
+        db.collection("daily").document(currentDate)
+                .collection("memo").orderBy("createdAt")
+                .addSnapshotListener(new EventListener<QuerySnapshot>() {
+                    @Override
+                    public void onEvent(@Nullable QuerySnapshot value, @Nullable FirebaseFirestoreException error) {
+                        if (error != null) {
+                            Log.e("Firestore Error", error.getMessage());
+                        }
+                        for (DocumentChange dc : value.getDocumentChanges()) {
+                            if (dc.getType() == DocumentChange.Type.ADDED) {
+                                MemoItem obj = dc.getDocument().toObject(MemoItem.class);
+                                memoItemList.add(obj);
+                            }
+                            memoAdapter.notifyDataSetChanged();
+                        }
+                    }
+                });
+    }
 
 }
