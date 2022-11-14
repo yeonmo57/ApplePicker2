@@ -27,6 +27,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.DocumentChange;
@@ -303,31 +304,37 @@ public class FragmentDaily extends Fragment {
 
         // 불러오기
         //오늘 날짜에 저장된 데이터 불러와서 EditText에 setText()하기
+        //이건 아닌 것 같다
+
         db.collection("daily")
-            .document(dateToday)//선택한 날짜에 해당하는 데이터 유무 확인
-            .get()
-            .addOnSuccessListener(snapShotData -> {
-                if (snapShotData.exists()) {//선택한 날짜에 저장된 데이터가 있는 경우 해당 data 갖고와서 화면에 뿌려줌.
-                    Log.e("선택한 날짜에 저장된 데이터가 있는 경우 해당 data 갖고와서 화면에 뿌려줌.", dateToday);
+                .document(dateToday)//선택한 날짜에 해당하는 데이터 유무 확인
+                .get()
+                .addOnSuccessListener(snapShotData -> {
+                    if (snapShotData.exists()) {//선택한 날짜에 저장된 데이터가 있는 경우 해당 data 갖고와서 화면에 뿌려줌.
+                        Log.e("선택한 날짜에 저장된 데이터가 있는 경우 해당 data 갖고와서 화면에 뿌려줌.", dateToday);
 
-                    String memoItem = (String) snapShotData.getData().get("memoItem");
+                        String memoItem = (String) snapShotData.getData().get("memoItem");
+
+                        // 메모 에디터 텍스트
+                        // 여기 수정하기
+                        //edit_memo.setText(dateToday);
+                        //edit_memo.setText(MemoItem.getMemo());
+                        //Log.e("get memo", memoItem);
 
 
-                    // 메모 에디터 텍스트
-                    edit_memo.setText(dateToday);
-
-                } else {//선택한 날짜에 해당하는 데이터가 없는 경우
-                    //새로 만들어서 DB에 추가함
-                    Log.e("선택한 날짜에 해당하는 데이터가 없는 경우", dateToday);
-                    db.collection("daily").document(dateToday)
-                        .set(dailyMap)
-                        .addOnSuccessListener(documentReference -> {
-                            Log.e(TAG, "DocumentSnapshot added with ID: ");
-                        }).addOnFailureListener(e -> {
+                    } else {//선택한 날짜에 해당하는 데이터가 없는 경우
+                        //새로 만들어서 DB에 추가함
+                        Log.e("선택한 날짜에 해당하는 데이터가 없는 경우", dateToday);
+                        db.collection("daily").document(dateToday)
+                                .set(dailyMap)
+                                .addOnSuccessListener(documentReference -> {
+                                    Log.e(TAG, "DocumentSnapshot added with ID: ");
+                                }).addOnFailureListener(e -> {
                             Log.e(TAG, "Error adding document", e);
                         });
-                }
-            }).addOnFailureListener(e -> e.printStackTrace());
+                    }
+                }).addOnFailureListener(e -> e.printStackTrace());
+
 
         /*
         //오늘 날짜에 저장된 데이터 불러와 RecyclerView 2개에 setText()하기
@@ -372,6 +379,7 @@ public class FragmentDaily extends Fragment {
 
 
 
+    //datepicker에서 가져오기
     @SuppressLint("LongLogTag")
     public void processDatePickerResult(String year, String month, String day, String day_of_week, String datePicked) {
         tv_date.setText(month + "/" + day + "(" + day_of_week + ")");
@@ -392,9 +400,10 @@ public class FragmentDaily extends Fragment {
 
                     //여기 수정하기
                     // String comment = snapShotData.getString("comment");
-                    // String totalTime = snapShotData.getString("totalTime");
+                    //String totalTime = snapShotData.getString("totalTime");
 
-
+                    //String memoTemp = snapShotData.getString("memo");
+                    //Log.e("memoTemp", memoTemp);
                     //edit_dDay.setText(dDay);
                     //edit_comment.setText(comment);
                     //edit_total_time.setText(totalTime)
@@ -454,7 +463,6 @@ public class FragmentDaily extends Fragment {
                     memoRecyclerView.setAdapter(memoAdapter);
                 }
             });
-
 
 
     }
