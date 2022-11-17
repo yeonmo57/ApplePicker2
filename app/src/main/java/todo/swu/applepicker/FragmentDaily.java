@@ -29,7 +29,9 @@ import android.widget.TextView;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.Timestamp;
+import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentChange;
+import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -37,11 +39,13 @@ import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
+import com.google.firebase.firestore.core.FirestoreClient;
 
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map;
 
@@ -92,6 +96,37 @@ public class FragmentDaily extends Fragment {
         //오늘날짜에 해당하는 데이터 불러와 화면에 보여줌.
         initFragment();
 
+        //오늘날짜에 해당하는 OCR 응답 데이터 화면에 보여줌.
+        db.collection("daily/"+currentDate+"/memoItem")
+                .get()
+                .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+                    @Override
+                    public void onComplete(@NonNull Task<QuerySnapshot> task) {
+                        if (task.isSuccessful()) {
+
+                            for (QueryDocumentSnapshot document : task.getResult())
+                            {
+                                String resultStr = "";
+                                Log.e(TAG, document.getId() + " => " + document.getData());
+                                // get data 예시
+                                edit_memo.setText(null);
+
+                                resultStr = document.getData().toString();
+                                resultStr = resultStr.replace("{memo=","");
+                                resultStr = resultStr.replace("}","");
+                                //Log.e("resultStr[0]", resultStr.indexOf());
+
+                                memoItemList.add(new MemoItem(resultStr));
+                                memoAdapter.notifyDataSetChanged();
+
+                            }
+                        } else {
+                            Log.d(TAG, "Error getting documents: ", task.getException());
+                        }
+
+                    }
+                });
+
         iButton_calendar.setOnClickListener(v -> {
             DialogFragment dateFragment = new DatePickerFragment();
             dateFragment.show(getActivity().getSupportFragmentManager(), "dateFragment");
@@ -111,20 +146,9 @@ public class FragmentDaily extends Fragment {
         });
 
         iButton_memo_add.setOnClickListener(v -> {
-            // 리사이클러뷰에 SimpleTextAdapter 객체 지정.
 
-            Timestamp timestamp = Timestamp.now();
-            memoItemList.add(new MemoItem(timestamp,edit_memo.getText().toString(), false));
-
-            addMemoDB(timestamp);
-            EventChangeListener();
-            //내가 추가함
+            memoItemList.add(new MemoItem(""));
             memoAdapter.notifyDataSetChanged();
-            /*
-            memoAdapter = new MemoAdapter(memoItemList);
-            memoRecyclerView.setAdapter(memoAdapter);
-             */
-            Log.e(TAG, "DB에 Task 저장됨 => ");
 
             edit_memo.setText(null);
         });
@@ -137,7 +161,7 @@ public class FragmentDaily extends Fragment {
     @SuppressLint("LongLogTag")
     public void initFragment() {
         //오늘 날짜 얻고 date 표시함.
-        Log.e("이게 2번 실행되나", "환장");
+
         tv_date.setText(getCurrentDate());
         Date now = new Date();
         String dateToday = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(now);
@@ -148,24 +172,12 @@ public class FragmentDaily extends Fragment {
         dailyMap = new HashMap<>();
         dailyMap.put("date", dateToday);
 
-
-        // 불러오기
-        //오늘 날짜에 저장된 데이터 불러와서 EditText에 setText()하기
+        //DB에 오늘 날짜 데이터 없으면 추가
         db.collection("daily")
                 .document(dateToday)//선택한 날짜에 해당하는 데이터 유무 확인
                 .get()
                 .addOnSuccessListener(snapShotData -> {
-                    if (snapShotData.exists()) {//선택한 날짜에 저장된 데이터가 있는 경우 해당 data 갖고와서 화면에 뿌려줌.
-                        Log.e("선택한 날짜에 저장된 데이터가 있는 경우 해당 data 갖고와서 화면에 뿌려줌.", dateToday);
-
-                        String memoItem = (String) snapShotData.getData().get("memoItem");
-
-
-                        // 메모 에디터 텍스트
-                        edit_memo.setText(dateToday);
-
-                    } else {//선택한 날짜에 해당하는 데이터가 없는 경우
-                        //새로 만들어서 DB에 추가함
+                    if (!snapShotData.exists()) {
                         Log.e("선택한 날짜에 해당하는 데이터가 없는 경우", dateToday);
                         db.collection("daily").document(dateToday)
                                 .set(dailyMap)
@@ -176,25 +188,6 @@ public class FragmentDaily extends Fragment {
                         });
                     }
                 }).addOnFailureListener(e -> e.printStackTrace());
-
-
-        //오늘 날짜에 저장된 데이터 불러와 RecyclerView 2개에 setText()하기
-        Query query = db.collection("daily").document(dateToday)
-                .collection("memo").orderBy("createdAt");
-        query.get().addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
-            @Override
-            public void onComplete(@NonNull Task<QuerySnapshot> memo) {
-                if (memo.isSuccessful()) {
-                    for (QueryDocumentSnapshot doc : memo.getResult()) {
-                        MemoItem obj = doc.toObject(MemoItem.class);
-                        memoItemList.add(obj);
-                    }
-                    memoAdapter.notifyDataSetChanged();
-                } else {
-                    Log.e(TAG, "Recyclerview 초기화 else 부분");
-                }
-            }
-        });
     }
 
     @SuppressLint("LongLogTag")
@@ -211,20 +204,8 @@ public class FragmentDaily extends Fragment {
             .document(datePicked) //선택한 날짜에 해당하는 데이터 유무 확인
             .get()
             .addOnSuccessListener(snapShotData -> {
-                if (snapShotData.exists()) {//선택한 날짜에 저장된 데이터가 있는 경우 해당 data 갖고와서 화면에 뿌려줌.
-                    Log.e("선택한 날짜에 저장된 데이터가 있는 경우 해당 data 갖고와서 화면에 뿌려줌.", currentDate);
-                    String dDay = snapShotData.getString("dDay");
-
-                    //여기 수정하기
-                    // String comment = snapShotData.getString("comment");
-                    // String totalTime = snapShotData.getString("totalTime");
-
-
-                    //edit_dDay.setText(dDay);
-                    //edit_comment.setText(comment);
-                    //edit_total_time.setText(totalTime)
-
-                } else {//선택한 날짜에 해당하는 데이터가 없는 경우
+                if (!snapShotData.exists()) {
+                    //선택한 날짜에 해당하는 데이터가 없는 경우
                     //새로 만들어서 DB에 데이터 추가함
                     Log.e("선택한 날짜에 해당하는 데이터가 없는 경우", currentDate);
                     db.collection("daily").document(datePicked)
@@ -237,27 +218,7 @@ public class FragmentDaily extends Fragment {
                 }
             }).addOnFailureListener(e -> e.printStackTrace());
 
-        //Memo
-        memoItemList = new ArrayList<MemoItem>();
-        db.collection("daily").document(datePicked)
-            .collection("memoItem").orderBy("createdAt")
-            .addSnapshotListener(new EventListener<QuerySnapshot>() {
-                @Override
-                public void onEvent(@Nullable QuerySnapshot value, @Nullable FirebaseFirestoreException error) {
-                    if (error != null) {
-                        Log.e("Firestore Error", error.getMessage());
-                    }
-                    for (DocumentSnapshot dc : value.getDocuments()) {
-                        MemoItem obj = dc.toObject(MemoItem.class);
-                        memoItemList.add(obj);
-                    }
-                    //taskAdapter.notifyDataSetChanged();
-                    memoAdapter = new MemoAdapter(memoItemList);
-                    memoRecyclerView.setAdapter(memoAdapter);
-                }
-            });
-
-
+        //해당 날짜의 메모 DB 불러오기 기능
 
     }
 
@@ -273,27 +234,6 @@ public class FragmentDaily extends Fragment {
                 Log.e(TAG, "Error updating document", e);
             });
     }
-
-    //RecyclerView Memo에 입력&변경사항 생길때마다 DB 업데이트함.
-    @SuppressLint("LongLogTag")
-    public void addMemoDB(Timestamp timestamp) {
-        Map<String, Object> memoMap = new HashMap<>();
-        memoMap.put("createdAt", timestamp);
-
-        memoMap.put("memo", edit_memo.getText().toString());
-        memoMap.put("achievement", false);
-
-        //task 업데이트.
-        db.collection("daily").document(currentDate)
-            .collection("memo")
-            .document(timestamp.toString()).set(memoMap)
-            .addOnSuccessListener(documentReference -> {
-                Log.e(TAG, "DocumentSnapshot added with ID: ");
-            }).addOnFailureListener(e -> {
-                Log.e(TAG, "Error adding document", e);
-            });
-    }
-
 
     //오늘 날짜 얻기.
     public String getCurrentDate() {
@@ -328,27 +268,4 @@ public class FragmentDaily extends Fragment {
         }
         return month + "/" + day + "(" + day_of_week + ")";
     }
-
-    //Memo로 수정
-    public void EventChangeListener() {
-        memoItemList = new ArrayList<MemoItem>();
-        db.collection("daily").document(currentDate)
-                .collection("memo").orderBy("createdAt")
-                .addSnapshotListener(new EventListener<QuerySnapshot>() {
-                    @Override
-                    public void onEvent(@Nullable QuerySnapshot value, @Nullable FirebaseFirestoreException error) {
-                        if (error != null) {
-                            Log.e("Firestore Error", error.getMessage());
-                        }
-                        for (DocumentChange dc : value.getDocumentChanges()) {
-                            if (dc.getType() == DocumentChange.Type.ADDED) {
-                                MemoItem obj = dc.getDocument().toObject(MemoItem.class);
-                                memoItemList.add(obj);
-                            }
-                            memoAdapter.notifyDataSetChanged();
-                        }
-                    }
-                });
-    }
-
 }
