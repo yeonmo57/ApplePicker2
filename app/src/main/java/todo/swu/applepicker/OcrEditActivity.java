@@ -2,18 +2,25 @@ package todo.swu.applepicker;
 
 import static android.content.ContentValues.TAG;
 
+import android.annotation.SuppressLint;
+import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.ParcelFileDescriptor;
 import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
@@ -53,10 +60,9 @@ public class OcrEditActivity extends AppCompatActivity {
     private ParcelFileDescriptor pfd;
     private FileOutputStream fileOutputStream;
     private String resultData;
+    private String jsonResponse;
     Map<String, Object> dateTodayMap;
     String currentDate;
-
-
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -68,10 +74,15 @@ public class OcrEditActivity extends AppCompatActivity {
 
         Intent receive_intent = getIntent();
 
-        String jsonResponse = receive_intent.getStringExtra("jsonResponse");
+        jsonResponse = receive_intent.getStringExtra("jsonResponse");
         String imagePath = receive_intent.getStringExtra("imagePath");
         List<String> inferTextList = new ArrayList<String>();
+
         Log.e("test", "json 파싱 실행 전");
+
+        // json 데이터 구조 확인
+        //StartRecord();
+
         // OCR 글자들 모음 List
         inferTextList = jsonParsing(jsonResponse);
         resultData = inferTextList.toString();
@@ -135,30 +146,6 @@ public class OcrEditActivity extends AppCompatActivity {
                     }
                 }).addOnFailureListener(e -> e.printStackTrace());
 
-
-        db = FirebaseFirestore.getInstance();
-        //isDataPassing > isDataPassing > flag == true 일 경우 프래그먼트에서 데이터 받아오기
-        db.collection("isDataPassing")
-                .document("isDataPassing") //선택한 날짜에 해당하는 데이터 유무 확인
-                .get()
-                .addOnSuccessListener(snapShotData -> {
-                    if (snapShotData.exists()) {//선택한 날짜에 저장된 데이터가 있는 경우 해당 data 갖고와서 화면에 뿌려줌.
-                        //Log.e("선택한 날짜에 저장된 데이터가 있는 경우 해당 data 갖고와서 화면에 뿌려줌.", dateToday);
-
-                        String flag = (String) snapShotData.getData().get("flag");
-                        Log.e("flag 값: ", flag);
-                        try {
-                            Thread.sleep(5000);
-                            if(flag.equals("True")) {
-                                Log.e("if문 안의 flag 값: ", flag);
-
-                            }
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-
-                    }
-                }).addOnFailureListener(e -> e.printStackTrace());
         saved_memo.setText("메모 저장 완료!");
     }
 
@@ -172,7 +159,7 @@ public class OcrEditActivity extends AppCompatActivity {
 //    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
 //    public void StartRecord(){
 //        try {
-//
+
 //            long now = System.currentTimeMillis();
 //            Date date = new Date(now);
 //            @SuppressLint("SimpleDateFormat") SimpleDateFormat sdfNow
@@ -195,7 +182,7 @@ public class OcrEditActivity extends AppCompatActivity {
 //        }
 //
 //    }
-
+//
 //    @Override
 //    protected void onActivityResult(int requestCode, int resultCode, Intent data){
 //        super.onActivityResult(requestCode,resultCode,data);
@@ -208,13 +195,14 @@ public class OcrEditActivity extends AppCompatActivity {
 //            }
 //        }
 //    }
-
+//
 //    public void addText(Uri uri) throws IOException {
 //        try {
 //            String inAddTextStr = "TEST";
+//
 //            pfd = this.getContentResolver().openFileDescriptor(uri, "w");
 //            fileOutputStream = new FileOutputStream(pfd.getFileDescriptor());
-//            putString(resultData);
+//            putString(jsonResponse);
 //        } catch (FileNotFoundException e) {
 //            e.printStackTrace();
 //        }
