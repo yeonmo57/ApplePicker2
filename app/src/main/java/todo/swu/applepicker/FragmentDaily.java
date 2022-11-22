@@ -27,6 +27,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.CollectionReference;
@@ -172,12 +173,12 @@ public class FragmentDaily extends Fragment {
         dailyMap = new HashMap<>();
         dailyMap.put("date", dateToday);
 
-        //DB에 오늘 날짜 데이터 없으면 추가
+
         db.collection("daily")
                 .document(dateToday)//선택한 날짜에 해당하는 데이터 유무 확인
                 .get()
                 .addOnSuccessListener(snapShotData -> {
-                    if (!snapShotData.exists()) {
+
                         Log.e("선택한 날짜에 해당하는 데이터가 없는 경우", dateToday);
                         db.collection("daily").document(dateToday)
                                 .set(dailyMap)
@@ -186,9 +187,11 @@ public class FragmentDaily extends Fragment {
                                 }).addOnFailureListener(e -> {
                             Log.e(TAG, "Error adding document", e);
                         });
+
                     }
                 }).addOnFailureListener(e -> e.printStackTrace());
     }
+
 
     @SuppressLint("LongLogTag")
     public void processDatePickerResult(String year, String month, String day, String day_of_week, String datePicked) {
@@ -204,8 +207,7 @@ public class FragmentDaily extends Fragment {
             .document(datePicked) //선택한 날짜에 해당하는 데이터 유무 확인
             .get()
             .addOnSuccessListener(snapShotData -> {
-                if (!snapShotData.exists()) {
-                    //선택한 날짜에 해당하는 데이터가 없는 경우
+
                     //새로 만들어서 DB에 데이터 추가함
                     Log.e("선택한 날짜에 해당하는 데이터가 없는 경우", currentDate);
                     db.collection("daily").document(datePicked)
@@ -218,7 +220,7 @@ public class FragmentDaily extends Fragment {
                 }
             }).addOnFailureListener(e -> e.printStackTrace());
 
-        //해당 날짜의 메모 DB 불러오기 기능
+
 
     }
 
