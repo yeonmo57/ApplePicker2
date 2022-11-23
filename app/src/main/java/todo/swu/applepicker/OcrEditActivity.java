@@ -76,7 +76,7 @@ public class OcrEditActivity extends AppCompatActivity {
 
         jsonResponse = receive_intent.getStringExtra("jsonResponse");
         String imagePath = receive_intent.getStringExtra("imagePath");
-        List<String> inferTextList = new ArrayList<String>();
+        List<String> memoList = new ArrayList<String>();
 
         Log.e("test", "json 파싱 실행 전");
 
@@ -84,24 +84,27 @@ public class OcrEditActivity extends AppCompatActivity {
         //StartRecord();
 
         // OCR 글자들 모음 List
-        inferTextList = jsonParsing(jsonResponse);
-        resultData = inferTextList.toString();
+        memoList = jsonParsing(jsonResponse);
+        resultData = memoList.toString();
         
         // 대괄호 없애기
         resultData = removeChar(resultData, 0);
         resultData = removeChar(resultData, resultData.length()-1);
 
         // 쉼표 없애기
-        resultData= resultData.replace(",", "");
+//        resultData= resultData.replace(",", "");
+        
 
         Log.e("test", "json 파싱 실행 후");
-        Log.e(inferTextList.toString(), "inferTextList");
+        Log.e(memoList.toString(), "memoList");
         Log.e(imagePath.toString(), "imagePath");
 
         //StartRecord();
 
         Map<String, Object> memoMap = new HashMap<>();
-        memoMap.put("memo", resultData);
+
+
+
 
         Date now = new Date();
         String dateToday = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(now);
@@ -112,26 +115,37 @@ public class OcrEditActivity extends AppCompatActivity {
         dateTodayMap = new HashMap<>();
         dateTodayMap.put("date", dateToday);
 
+        List<String> finalMemoList = memoList;
         db.collection("daily")
                 .document(dateToday)//dateToday 오늘 날짜가 있는 경우
                 .get()
                 .addOnSuccessListener(snapShotData -> {
                     if (snapShotData.exists()) {
                         //선택한 날짜에 저장된 데이터가 있는 경우 메모 데이터 저장
-                        db.collection("/daily/"+dateToday+"/memoItem")
-                                .add(memoMap)
-                                .addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
-                                    @Override
-                                    public void onSuccess(DocumentReference documentReference) {
-                                        Log.d(TAG, "DocumentSnapshot added with ID: " + documentReference.getId());
-                                    }
-                                })
-                                .addOnFailureListener(new OnFailureListener() {
-                                    @Override
-                                    public void onFailure(@NonNull Exception e) {
-                                        Log.w(TAG, "Error adding document", e);
-                                    }
-                                });
+                        //memoList에 있는거 콤마 기준으로 저장
+
+                        //memoList
+                        for(int i = 0; i< finalMemoList.size(); i++)
+                        {
+                            if(i<=9)
+                            {
+                                memoMap.put("memo", finalMemoList.get(i));
+                                db.collection("/daily/"+dateToday+"/memoItem")
+                                        .document("0"+Integer.toString(i))
+                                        .set(memoMap);
+                                memoMap.clear();
+                            }
+                            else {
+                                memoMap.put("memo", finalMemoList.get(i));
+                                db.collection("/daily/" + dateToday + "/memoItem")
+                                        .document(Integer.toString(i))
+                                        .set(memoMap);
+                                memoMap.clear();
+                            }
+
+                        }
+
+
 
                     } else {//선택한 날짜에 해당하는 데이터가 없는 경우
                         //새로 만들어서 DB에 추가함
@@ -237,7 +251,7 @@ public class OcrEditActivity extends AppCompatActivity {
 
     private List jsonParsing(String json)
     {
-        List<String> inferTextList = new ArrayList<String>();
+        List<String> memoList = new ArrayList<String>();
         Log.e("in jsonParsing Test", "1");
         try{
             JSONObject imagesJsonObject = new JSONObject(json);
@@ -251,19 +265,36 @@ public class OcrEditActivity extends AppCompatActivity {
             JSONObject fieldsJsonObject = new JSONObject(imagesJson);
             JSONArray fieldsArray = fieldsJsonObject.getJSONArray("fields");
 
+            String memo = "";
+
             for(int i=0; i<fieldsArray.length(); i++)
             {
                 JSONObject fieldsObject = fieldsArray.getJSONObject(i);
                 String inferText = fieldsObject.getString("inferText");
+                String lineBreak = fieldsObject.getString("lineBreak");
+                //Log.e(inferText, "inferText");
+                //Log.e(lineBreak, "lineBreak");
 
-                if(inferText.length()>=2)
-                    inferTextList.add(fieldsObject.getString("inferText"));
+                if(lineBreak == "true")
+                {
+                    memo+=inferText;
+                    memoList.add(memo);
+                    memo="";
+                }
+                else
+                {
+                    memo+=inferText;
+                    memo+=" ";
+                    //Log.e(memo, "memo");
+                }
+
+
             }
         }catch (JSONException e) {
             e.printStackTrace();
         }
-        Log.e("in jsonParsing Test", "2");
-        return inferTextList;
+
+        return memoList;
     }
 
 

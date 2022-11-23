@@ -157,6 +157,12 @@ public class FragmentDaily extends Fragment {
 
     } //onCreateView End.
 
+    public String removeChar(String str, Integer n) {
+        String front = str.substring(0, n);
+        String back = str.substring(n+1, str.length());
+        return front + back;
+    }
+
     //오늘날짜에 해당하는 데이터 불러와 화면에 보여줌.
     @SuppressLint("LongLogTag")
     public void initFragment() {
