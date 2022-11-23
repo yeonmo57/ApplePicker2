@@ -185,18 +185,19 @@ public class FragmentDaily extends Fragment {
                 .get()
                 .addOnSuccessListener(snapShotData -> {
 
-                        Log.e("선택한 날짜에 해당하는 데이터가 없는 경우", dateToday);
-                        db.collection("daily").document(dateToday)
-                                .set(dailyMap)
-                                .addOnSuccessListener(documentReference -> {
-                                    Log.e(TAG, "DocumentSnapshot added with ID: ");
-                                }).addOnFailureListener(e -> {
-                            Log.e(TAG, "Error adding document", e);
-                        });
+                    Log.e("선택한 날짜에 해당하는 데이터가 없는 경우", dateToday);
+                    db.collection("daily").document(dateToday)
+                            .set(dailyMap)
+                            .addOnSuccessListener(documentReference -> {
+                                Log.e(TAG, "DocumentSnapshot added with ID: ");
+                            }).addOnFailureListener(e -> {
+                        Log.e(TAG, "Error adding document", e);
+                    });
 
-                    }
                 }).addOnFailureListener(e -> e.printStackTrace());
     }
+
+
 
 
     @SuppressLint("LongLogTag")
@@ -208,40 +209,9 @@ public class FragmentDaily extends Fragment {
         dailyMap = new HashMap<>();
         dailyMap.put("date", datePicked);
 
-        //Edittext 3개 표시
-        db.collection("daily")
-            .document(datePicked) //선택한 날짜에 해당하는 데이터 유무 확인
-            .get()
-            .addOnSuccessListener(snapShotData -> {
-
-                    //새로 만들어서 DB에 데이터 추가함
-                    Log.e("선택한 날짜에 해당하는 데이터가 없는 경우", currentDate);
-                    db.collection("daily").document(datePicked)
-                        .set(dailyMap)
-                        .addOnSuccessListener(documentReference -> {
-                            Log.e(TAG, "DocumentSnapshot added with ID: ");
-                        }).addOnFailureListener(e -> {
-                            Log.e(TAG, "Error adding document", e);
-                        });
-                }
-            }).addOnFailureListener(e -> e.printStackTrace());
-
-
 
     }
 
-    //EditText 3개에 변경사항 생길때마다 DB 업데이트함.
-    @SuppressLint("LongLogTag")
-    public void updateDB(String field, EditText editText) {
-        //field, editText로 3개 필드 구분해서 업데이트.
-        db.collection("daily").document(currentDate)
-            .update(field, editText.getText().toString())
-            .addOnSuccessListener(documentReference -> {
-                Log.e(TAG, "DocumentSnapshot updated with ID: ");
-            }).addOnFailureListener(e -> {
-                Log.e(TAG, "Error updating document", e);
-            });
-    }
 
     //오늘 날짜 얻기.
     public String getCurrentDate() {

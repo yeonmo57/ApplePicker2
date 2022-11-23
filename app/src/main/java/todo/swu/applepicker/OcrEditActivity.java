@@ -15,6 +15,7 @@ import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 
@@ -38,10 +39,14 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.QuerySnapshot;
 
 // 파일 입출력 관련
 import java.io.BufferedReader;
@@ -63,6 +68,7 @@ public class OcrEditActivity extends AppCompatActivity {
     private String jsonResponse;
     Map<String, Object> dateTodayMap;
     String currentDate;
+    private FirebaseFirestore test;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -116,47 +122,60 @@ public class OcrEditActivity extends AppCompatActivity {
         dateTodayMap.put("date", dateToday);
 
         List<String> finalMemoList = memoList;
+
+        final int[] lastIndex = {0};
+
         db.collection("daily")
                 .document(dateToday)//dateToday 오늘 날짜가 있는 경우
                 .get()
                 .addOnSuccessListener(snapShotData -> {
                     if (snapShotData.exists()) {
                         //선택한 날짜에 저장된 데이터가 있는 경우 메모 데이터 저장
-                        //memoList에 있는거 콤마 기준으로 저장
 
+                        //이미 있던 데이터 몇개인지 세기
+                        db.collection("daily/"+currentDate+"/memoItem")
+                                .get()
+                                .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+                                    @Override
+                                    public void onComplete(@NonNull Task<QuerySnapshot> task) {
+                                        if (task.isSuccessful()) {
+
+                                            for (QueryDocumentSnapshot document : task.getResult())
+                                            {
+                                                Log.e(TAG, "lastIndex" + " => " + Integer.toString(lastIndex[0]));
+                                                lastIndex[0]++;
+                                            }
+                                        } else {
+                                            Log.d(TAG, "Error getting documents: ", task.getException());
+                                        }
+
+                                    }
+                                });
+                        memoMap.clear();
                         //memoList
                         for(int i = 0; i< finalMemoList.size(); i++)
                         {
-                            if(i<=9)
+                            Log.e("새로 선택한 사진의 size",Integer.toString(finalMemoList.size()));
+
+                            if(i+lastIndex[0]<=9)
                             {
                                 memoMap.put("memo", finalMemoList.get(i));
                                 db.collection("/daily/"+dateToday+"/memoItem")
-                                        .document("0"+Integer.toString(i))
+                                        .document("0"+Integer.toString(i+lastIndex[0]+1))
                                         .set(memoMap);
                                 memoMap.clear();
+                                Log.e("first","if");
                             }
                             else {
                                 memoMap.put("memo", finalMemoList.get(i));
                                 db.collection("/daily/" + dateToday + "/memoItem")
-                                        .document(Integer.toString(i))
+                                        .document(Integer.toString(i+lastIndex[0]+1))
                                         .set(memoMap);
                                 memoMap.clear();
+                                Log.e("second","if");
                             }
 
                         }
-
-
-
-                    } else {//선택한 날짜에 해당하는 데이터가 없는 경우
-                        //새로 만들어서 DB에 추가함
-//                        Log.e("선택한 날짜에 해당하는 데이터가 없는 경우", dateToday);
-//                        db.collection("daily").document(dateToday)
-//                                .set(dailyMap)
-//                                .addOnSuccessListener(documentReference -> {
-//                                    Log.e(TAG, "DocumentSnapshot added with ID: ");
-//                                }).addOnFailureListener(e -> {
-//                            Log.e(TAG, "Error adding document", e);
-//                        });
                     }
                 }).addOnFailureListener(e -> e.printStackTrace());
 
@@ -252,7 +271,7 @@ public class OcrEditActivity extends AppCompatActivity {
     private List jsonParsing(String json)
     {
         List<String> memoList = new ArrayList<String>();
-        Log.e("in jsonParsing Test", "1");
+        Log.e("in jsonParsing Test", json);
         try{
             JSONObject imagesJsonObject = new JSONObject(json);
             JSONArray imagesArray = imagesJsonObject.getJSONArray("images");
