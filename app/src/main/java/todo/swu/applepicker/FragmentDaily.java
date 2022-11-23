@@ -1,6 +1,7 @@
 package todo.swu.applepicker;
 
 import android.annotation.SuppressLint;
+import android.app.DatePickerDialog;
 import android.content.Intent;
 import android.os.Bundle;
 
@@ -21,6 +22,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -131,7 +133,17 @@ public class FragmentDaily extends Fragment {
         iButton_calendar.setOnClickListener(v -> {
             DialogFragment dateFragment = new DatePickerFragment();
             dateFragment.show(getActivity().getSupportFragmentManager(), "dateFragment");
+
+
         });
+
+        DatePickerDialog.OnDateSetListener dateSetListener =
+                new DatePickerDialog.OnDateSetListener() {
+                    @Override
+                    public void onDateSet(DatePicker datePicker, int yy, int mm, int dd) {
+                        Log.e("date picker 선택: ", String.format("%d-%d-%d", yy,mm+1,dd));
+                    }
+                };
 
         edit_memo.addTextChangedListener(new TextWatcher() {
             @Override
@@ -209,7 +221,60 @@ public class FragmentDaily extends Fragment {
         dailyMap = new HashMap<>();
         dailyMap.put("date", datePicked);
 
+        Log.e("daily date 피커", datePicked);
+        
+        // 이전 메모 리사이클러 뷰 지우고 해당 날짜 정보 가져오기
 
+        memoItemList.removeAll(memoItemList);
+        memoAdapter.notifyDataSetChanged();
+
+        db.collection("daily")
+                .document(currentDate)//선택한 날짜에 해당하는 데이터 유무 확인
+                .get()
+                .addOnSuccessListener(snapShotData -> {
+
+                    //Log.e("선택한 날짜에 해당하는 데이터가 없는 경우", currentDate);
+                    db.collection("daily").document(currentDate)
+                            .set(dailyMap)
+                            .addOnSuccessListener(documentReference -> {
+                                Log.e(TAG, "DocumentSnapshot added with ID: ");
+                            }).addOnFailureListener(e -> {
+                        Log.e(TAG, "Error adding document", e);
+                    });
+
+                }).addOnFailureListener(e -> e.printStackTrace());
+
+        //해당날짜에 해당하는 OCR 응답 데이터 화면에 보여줌.
+        db.collection("daily/"+currentDate+"/memoItem")
+                .get()
+                .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+                    @Override
+                    public void onComplete(@NonNull Task<QuerySnapshot> task) {
+                        if (task.isSuccessful()) {
+
+                            for (QueryDocumentSnapshot document : task.getResult())
+                            {
+                                String resultStr = "";
+                                Log.e(TAG, document.getId() + " => " + document.getData());
+                                // get data 예시
+                                edit_memo.setText(null);
+
+                                resultStr = document.getData().toString();
+                                resultStr = resultStr.replace("{memo=","");
+                                resultStr = resultStr.replace("}","");
+                                //Log.e("resultStr[0]", resultStr.indexOf());
+
+                                memoItemList.add(new MemoItem(resultStr));
+                                memoAdapter.notifyDataSetChanged();
+
+                            }
+                        } else {
+                            Log.d(TAG, "Error getting documents: ", task.getException());
+                        }
+
+                    }
+                });
+        
     }
 
 
