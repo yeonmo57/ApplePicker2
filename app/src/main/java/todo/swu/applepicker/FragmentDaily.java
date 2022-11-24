@@ -22,6 +22,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.ImageButton;
@@ -56,7 +57,7 @@ public class FragmentDaily extends Fragment {
     ImageButton iButton_calendar;
     TextView tv_date;
     EditText edit_memo;
-
+    Button refreshBtn;
     ImageButton iButton_memo_add;
 
     FirebaseFirestore db;
@@ -71,6 +72,28 @@ public class FragmentDaily extends Fragment {
     MemoAdapter memoAdapter;
 
 
+    private int lastIndex;
+    private int newSize;
+
+    public void setLastIndexSize(int lastIdx)
+    {
+        this.lastIndex = lastIdx;
+        this.newSize = newSize;
+    }
+    public void setNewImageSize(int newSize)
+    {
+        this.lastIndex = lastIndex;
+        this.newSize = newSize;
+    }
+
+    public int getLastIndex()
+    {
+        return this.lastIndex;
+    }
+    public int getNewImageSize()
+    {
+        return this.newSize;
+    }
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -81,6 +104,8 @@ public class FragmentDaily extends Fragment {
         iButton_calendar = (ImageButton) myView.findViewById(R.id.iButton_calendar);
         edit_memo = (EditText) myView.findViewById(R.id.edit_memo);
         tv_date = (TextView) myView.findViewById(R.id.tv_date);
+
+        refreshBtn = (Button) myView.findViewById(R.id.refreshBtn);
 
         iButton_memo_add = (ImageButton) myView.findViewById(R.id.iButton_memo_add);
 
@@ -120,9 +145,12 @@ public class FragmentDaily extends Fragment {
                                 //Log.e("resultStr[0]", resultStr.indexOf());
 
                                 memoItemList.add(new MemoItem(resultStr));
-                                memoAdapter.notifyDataSetChanged();
+
 
                             }
+                            if(!memoItemList.isEmpty())
+                                memoItemList.remove(memoItemList.size()-1);
+                            memoAdapter.notifyDataSetChanged();
                         } else {
                             Log.d(TAG, "Error getting documents: ", task.getException());
                         }
@@ -136,6 +164,107 @@ public class FragmentDaily extends Fragment {
 
 
         });
+
+//        refreshBtn.setOnClickListener(v -> {
+//
+//            DocumentReference docRef = db.collection("daily/" + currentDate + "/memoItem").document("size");
+//            DocumentReference docRef2 = db.collection("daily/" + currentDate + "/memoItem").document("newImageSize");
+//
+//            docRef.get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
+//                @Override
+//                public void onComplete(@NonNull Task<DocumentSnapshot> task) {
+//                    if (task.isSuccessful()) {
+//                        DocumentSnapshot document = task.getResult();
+//                        if (document.exists()) {
+//                            // size 문서가 있는 경우 size+=size
+//                            Log.e(TAG, "DocumentSnapshot data: " + document.getData());
+//
+//                            String allMemoSizeStr = document.getData().toString();
+//                            String[] sizes;
+//
+//                            Log.e("daily allMemoSizeStr: ", allMemoSizeStr);
+//                            // 중괄호 없애기
+//                            allMemoSizeStr = allMemoSizeStr.replace("{", "");
+//                            allMemoSizeStr = allMemoSizeStr.replace("}", "");
+//                            sizes = allMemoSizeStr.split(", ");
+//                            Log.e("sizes: ", sizes[0]);
+////                            allMemoSizeStr = allMemoSizeStr.replace("newImageSize=", "");
+////                            allMemoSizeStr = allMemoSizeStr.replace(", size=", "");
+//
+//
+//                            //setLastIndexSize(Integer.valueOf(allMemoSizeStr));
+//                        }
+//                    }
+//                }
+//            });
+//
+//            docRef2.get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
+//                @Override
+//                public void onComplete(@NonNull Task<DocumentSnapshot> task) {
+//                    if (task.isSuccessful()) {
+//                        DocumentSnapshot document = task.getResult();
+//                        if (document.exists()) {
+//                            // newImageSize 문서가 있는 경우 size+=size
+//                            Log.e(TAG, "DocumentSnapshot data: " + document.getData());
+//
+//                            String newImageSizeStr = document.getData().toString();
+//
+//                            Log.e("daily allMemoSizeStr: ", newImageSizeStr);
+//                            // 중괄호 없애기
+//                            newImageSizeStr = newImageSizeStr.replace("{", "");
+//                            newImageSizeStr = newImageSizeStr.replace("}", "");
+//                            newImageSizeStr = newImageSizeStr.replace("size=", "");
+//
+//                            //setNewImageSize(Integer.valueOf(newImageSizeStr));
+//                        }
+//                    }
+//                }
+//            });
+//
+//            // 리스트로 보여주기
+//            db.collection("daily/" + currentDate + "/memoItem")
+//                    .get()
+//                    .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+//                        @Override
+//                        public void onComplete(@NonNull Task<QuerySnapshot> task) {
+//                            if (task.isSuccessful()) {
+//                                int newImageSize = getNewImageSize();
+//                                int lastIndex = getLastIndex();
+//
+//                                int i = 0;
+//                                int flag = 0;
+//
+//                                for (QueryDocumentSnapshot document : task.getResult()) {
+//                                    String resultStr = "";
+//                                    Log.e(TAG, document.getId() + " => " + document.getData());
+//                                    // get data 예시
+//                                    edit_memo.setText(null);
+//
+//                                    resultStr = document.getData().toString();
+//                                    resultStr = resultStr.replace("{memo=", "");
+//                                    resultStr = resultStr.replace("}", "");
+//                                    Log.e("i", Integer.toString(i));
+//                                    Log.e("lastIndex-newImageSize", Integer.toString(lastIndex-newImageSize));
+//                                    if (lastIndex -  newImageSize< i) {
+//                                        memoItemList.add(new MemoItem(resultStr));
+//                                        flag = 1;
+//                                    }
+//
+//                                    i++;
+//                                }
+//                                if (flag == 1) {
+//                                    memoItemList.remove(memoItemList.size() - 1);
+//                                    memoAdapter.notifyDataSetChanged();
+//                                }
+//
+//                            } else {
+//                                Log.d(TAG, "Error getting documents: ", task.getException());
+//                            }
+//
+//                        }
+//                    });
+//
+//        });
 
         DatePickerDialog.OnDateSetListener dateSetListener =
                 new DatePickerDialog.OnDateSetListener() {
@@ -262,12 +391,13 @@ public class FragmentDaily extends Fragment {
                                 resultStr = document.getData().toString();
                                 resultStr = resultStr.replace("{memo=","");
                                 resultStr = resultStr.replace("}","");
-                                //Log.e("resultStr[0]", resultStr.indexOf());
+                                Log.e("resultStr", resultStr);
 
                                 memoItemList.add(new MemoItem(resultStr));
+                                memoItemList.remove(memoItemList.size()-1);
                                 memoAdapter.notifyDataSetChanged();
-
                             }
+
                         } else {
                             Log.d(TAG, "Error getting documents: ", task.getException());
                         }

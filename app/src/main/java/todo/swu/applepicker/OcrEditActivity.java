@@ -47,11 +47,11 @@ public class OcrEditActivity extends AppCompatActivity {
     private FileOutputStream fileOutputStream;
     private String resultData;
     private String jsonResponse;
-    private int lastIndex;
+
     Map<String, Object> dateTodayMap;
     String currentDate;
     private FirebaseFirestore test;
-
+    private int lastIndex;
 
     public void setLastIndex(int lastIdx)
     {
@@ -137,6 +137,7 @@ public class OcrEditActivity extends AppCompatActivity {
 
                         memoMap.clear();
                         memoMap.put("size", Integer.valueOf(memoSizeStr) + finalMemoList.size());
+                        //memoMap.put("newImageSize", finalMemoList.size());
                         db.collection("/daily/" + dateToday + "/memoItem")
                                 .document("size")
                                 .set(memoMap);
