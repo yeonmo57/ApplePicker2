@@ -93,7 +93,7 @@ public class RequestHttpConnection {
         } catch (Exception e) {
             System.out.println(e);
         }
-        Log.e("in requestHttp json: ", response.toString());
+        //Log.e("in requestHttp json: ", response.toString());
         return response.toString();
     }
 

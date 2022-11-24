@@ -2,29 +2,17 @@ package todo.swu.applepicker;
 
 import static android.content.ContentValues.TAG;
 
-import android.annotation.SuppressLint;
-import android.app.Activity;
-import android.content.Context;
 import android.content.Intent;
-import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.ParcelFileDescriptor;
 import android.util.Log;
-import android.view.View;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentManager;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -40,8 +28,7 @@ import java.util.Locale;
 import java.util.Map;
 
 import com.google.android.gms.tasks.Task;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
+import com.google.common.primitives.UnsignedInteger;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -49,12 +36,6 @@ import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 
 // 파일 입출력 관련
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
 
 
 public class OcrEditActivity extends AppCompatActivity {
@@ -66,9 +47,21 @@ public class OcrEditActivity extends AppCompatActivity {
     private FileOutputStream fileOutputStream;
     private String resultData;
     private String jsonResponse;
+    private int lastIndex;
     Map<String, Object> dateTodayMap;
     String currentDate;
     private FirebaseFirestore test;
+
+
+    public void setLastIndex(int lastIdx)
+    {
+        this.lastIndex = lastIdx;
+    }
+
+    public int getLastIndex()
+    {
+        return this.lastIndex;
+    }
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -86,6 +79,7 @@ public class OcrEditActivity extends AppCompatActivity {
 
         Log.e("test", "json 파싱 실행 전");
 
+
         // json 데이터 구조 확인
         //StartRecord();
 
@@ -102,15 +96,12 @@ public class OcrEditActivity extends AppCompatActivity {
         
 
         Log.e("test", "json 파싱 실행 후");
-        Log.e(memoList.toString(), "memoList");
-        Log.e(imagePath.toString(), "imagePath");
+        //Log.e(memoList.toString(), "memoList");
+        //Log.e(imagePath.toString(), "imagePath");
 
         //StartRecord();
 
         Map<String, Object> memoMap = new HashMap<>();
-
-
-
 
         Date now = new Date();
         String dateToday = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(now);
@@ -123,67 +114,115 @@ public class OcrEditActivity extends AppCompatActivity {
 
         List<String> finalMemoList = memoList;
 
-        final int[] lastIndex = {0};
 
-        db.collection("daily")
-                .document(dateToday)//dateToday 오늘 날짜가 있는 경우
-                .get()
-                .addOnSuccessListener(snapShotData -> {
-                    if (snapShotData.exists()) {
-                        //선택한 날짜에 저장된 데이터가 있는 경우 메모 데이터 저장
+        //이미 있던 데이터 몇개인지 세고 업데이트
+        DocumentReference docRef = db.collection("daily/" + currentDate + "/memoItem").document("size");
+        docRef.get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
+            @Override
+            public void onComplete(@NonNull Task<DocumentSnapshot> task) {
+                if (task.isSuccessful()) {
+                    DocumentSnapshot document = task.getResult();
+                    if (document.exists()) {
+                        // size 문서가 있는 경우 size+=size
+                        Log.e(TAG, "DocumentSnapshot data: " + document.getData());
 
-                        //이미 있던 데이터 몇개인지 세기
-                        db.collection("daily/"+currentDate+"/memoItem")
-                                .get()
-                                .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
-                                    @Override
-                                    public void onComplete(@NonNull Task<QuerySnapshot> task) {
-                                        if (task.isSuccessful()) {
+                        String memoSizeStr = document.getData().toString();
+                        // 중괄호 없애기
+                        memoSizeStr = memoSizeStr.replace("{", "");
+                        memoSizeStr = memoSizeStr.replace("}", "");
+                        memoSizeStr = memoSizeStr.replace("size=", "");
 
-                                            for (QueryDocumentSnapshot document : task.getResult())
-                                            {
-                                                Log.e(TAG, "lastIndex" + " => " + Integer.toString(lastIndex[0]));
-                                                lastIndex[0]++;
-                                            }
-                                        } else {
-                                            Log.d(TAG, "Error getting documents: ", task.getException());
-                                        }
+                        // memoSizeStr -> 원래 DB에 있던 size
+                        // finalMemoList.size() ocr받은 리스트 size
 
-                                    }
-                                });
                         memoMap.clear();
-                        //memoList
-                        for(int i = 0; i< finalMemoList.size(); i++)
-                        {
-                            Log.e("새로 선택한 사진의 size",Integer.toString(finalMemoList.size()));
+                        memoMap.put("size", Integer.valueOf(memoSizeStr) + finalMemoList.size());
+                        db.collection("/daily/" + dateToday + "/memoItem")
+                                .document("size")
+                                .set(memoMap);
+                        memoMap.clear();
 
-                            if(i+lastIndex[0]<=9)
-                            {
-                                memoMap.put("memo", finalMemoList.get(i));
-                                db.collection("/daily/"+dateToday+"/memoItem")
-                                        .document("0"+Integer.toString(i+lastIndex[0]+1))
-                                        .set(memoMap);
-                                memoMap.clear();
-                                Log.e("first","if");
-                            }
-                            else {
+                        //memoList
+                        // 10이 010으로 저장되고 있음
+
+                        Log.e("finalMemoList.size(): ", Integer.toString(finalMemoList.size()));
+                        Log.e("memoSizeStr: ", memoSizeStr);
+
+
+                        for (int i = 0; i < finalMemoList.size(); i++) {
+                            Log.e("새로 선택한 사진의 size", Integer.toString(finalMemoList.size()));
+                            Log.e("i + memoSizeStr +1:  ", Integer.toString(i + Integer.valueOf(memoSizeStr) +1));
+
+                            if (i + Integer.valueOf(memoSizeStr) +1 <= 9) {
                                 memoMap.put("memo", finalMemoList.get(i));
                                 db.collection("/daily/" + dateToday + "/memoItem")
-                                        .document(Integer.toString(i+lastIndex[0]+1))
+                                        .document("0" + Integer.toString(i + Integer.valueOf(memoSizeStr) + 1))
                                         .set(memoMap);
                                 memoMap.clear();
-                                Log.e("second","if");
+                                Log.e("first", "if");
+                            } else if(i + Integer.valueOf(memoSizeStr) +1 == 9) {
+                                memoMap.put("memo", finalMemoList.get(i));
+                                db.collection("/daily/" + dateToday + "/memoItem")
+                                        .document(Integer.toString(10))
+                                        .set(memoMap);
+                                memoMap.clear();
+                                Log.e("second", "if");
+                            } else {
+                                memoMap.put("memo", finalMemoList.get(i));
+                                db.collection("/daily/" + dateToday + "/memoItem")
+                                        .document(Integer.toString(i + Integer.valueOf(memoSizeStr) + 1))
+                                        .set(memoMap);
+                                memoMap.clear();
+                                Log.e("second", "if");
                             }
 
                         }
-                    }
-                }).addOnFailureListener(e -> e.printStackTrace());
 
+                } else {
+                        Log.e(TAG, "No such document");
+                        // DB에 size라는 문서가 없을 경우 새로 추가
+                        memoMap.clear();
+                        memoMap.put("size", finalMemoList.size());
+                        db.collection("/daily/" + dateToday + "/memoItem")
+                                .document("size")
+                                .set(memoMap);
+                        memoMap.clear();
+
+                        //memoList
+                        for (int i = 0; i < finalMemoList.size(); i++) {
+                            Log.e("새로 선택한 사진의 size", Integer.toString(finalMemoList.size()));
+
+                            if (i <= 9) {
+                                memoMap.put("memo", finalMemoList.get(i));
+                                db.collection("/daily/" + dateToday + "/memoItem")
+                                        .document("0" + Integer.toString(i + lastIndex + 1))
+                                        .set(memoMap);
+                                memoMap.clear();
+                                Log.e("first", "if");
+                            } else {
+                                memoMap.put("memo", finalMemoList.get(i));
+                                db.collection("/daily/" + dateToday + "/memoItem")
+                                        .document(Integer.toString(i + lastIndex + 1))
+                                        .set(memoMap);
+                                memoMap.clear();
+                                Log.e("second", "if");
+                            }
+                        }
+                }
+            } else
+
+            {
+                Log.d(TAG, "get failed with ", task.getException());
+            }
+        }
+    }).addOnFailureListener(e -> e.printStackTrace());
         saved_memo.setText("메모 저장 완료!");
     }
 
 
-    public String removeChar(String str, Integer n) {
+
+
+    public String removeChar(String str, int n) {
         String front = str.substring(0, n);
         String back = str.substring(n+1, str.length());
         return front + back;
