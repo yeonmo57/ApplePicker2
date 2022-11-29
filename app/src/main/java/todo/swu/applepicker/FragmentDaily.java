@@ -1,6 +1,7 @@
 package todo.swu.applepicker;
 
 import android.annotation.SuppressLint;
+import android.app.DatePickerDialog;
 import android.content.Intent;
 import android.os.Bundle;
 
@@ -21,6 +22,8 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -54,7 +57,7 @@ public class FragmentDaily extends Fragment {
     ImageButton iButton_calendar;
     TextView tv_date;
     EditText edit_memo;
-
+    Button refreshBtn;
     ImageButton iButton_memo_add;
 
     FirebaseFirestore db;
@@ -69,6 +72,28 @@ public class FragmentDaily extends Fragment {
     MemoAdapter memoAdapter;
 
 
+    private int lastIndex;
+    private int newSize;
+
+    public void setLastIndexSize(int lastIdx)
+    {
+        this.lastIndex = lastIdx;
+        this.newSize = newSize;
+    }
+    public void setNewImageSize(int newSize)
+    {
+        this.lastIndex = lastIndex;
+        this.newSize = newSize;
+    }
+
+    public int getLastIndex()
+    {
+        return this.lastIndex;
+    }
+    public int getNewImageSize()
+    {
+        return this.newSize;
+    }
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -79,6 +104,8 @@ public class FragmentDaily extends Fragment {
         iButton_calendar = (ImageButton) myView.findViewById(R.id.iButton_calendar);
         edit_memo = (EditText) myView.findViewById(R.id.edit_memo);
         tv_date = (TextView) myView.findViewById(R.id.tv_date);
+
+        refreshBtn = (Button) myView.findViewById(R.id.refreshBtn);
 
         iButton_memo_add = (ImageButton) myView.findViewById(R.id.iButton_memo_add);
 
@@ -118,9 +145,12 @@ public class FragmentDaily extends Fragment {
                                 //Log.e("resultStr[0]", resultStr.indexOf());
 
                                 memoItemList.add(new MemoItem(resultStr));
-                                memoAdapter.notifyDataSetChanged();
+
 
                             }
+                            if(!memoItemList.isEmpty())
+                                memoItemList.remove(memoItemList.size()-1);
+                            memoAdapter.notifyDataSetChanged();
                         } else {
                             Log.d(TAG, "Error getting documents: ", task.getException());
                         }
@@ -131,7 +161,118 @@ public class FragmentDaily extends Fragment {
         iButton_calendar.setOnClickListener(v -> {
             DialogFragment dateFragment = new DatePickerFragment();
             dateFragment.show(getActivity().getSupportFragmentManager(), "dateFragment");
+
+
         });
+
+//        refreshBtn.setOnClickListener(v -> {
+//
+//            DocumentReference docRef = db.collection("daily/" + currentDate + "/memoItem").document("size");
+//            DocumentReference docRef2 = db.collection("daily/" + currentDate + "/memoItem").document("newImageSize");
+//
+//            docRef.get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
+//                @Override
+//                public void onComplete(@NonNull Task<DocumentSnapshot> task) {
+//                    if (task.isSuccessful()) {
+//                        DocumentSnapshot document = task.getResult();
+//                        if (document.exists()) {
+//                            // size 문서가 있는 경우 size+=size
+//                            Log.e(TAG, "DocumentSnapshot data: " + document.getData());
+//
+//                            String allMemoSizeStr = document.getData().toString();
+//                            String[] sizes;
+//
+//                            Log.e("daily allMemoSizeStr: ", allMemoSizeStr);
+//                            // 중괄호 없애기
+//                            allMemoSizeStr = allMemoSizeStr.replace("{", "");
+//                            allMemoSizeStr = allMemoSizeStr.replace("}", "");
+//                            sizes = allMemoSizeStr.split(", ");
+//                            Log.e("sizes: ", sizes[0]);
+////                            allMemoSizeStr = allMemoSizeStr.replace("newImageSize=", "");
+////                            allMemoSizeStr = allMemoSizeStr.replace(", size=", "");
+//
+//
+//                            //setLastIndexSize(Integer.valueOf(allMemoSizeStr));
+//                        }
+//                    }
+//                }
+//            });
+//
+//            docRef2.get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
+//                @Override
+//                public void onComplete(@NonNull Task<DocumentSnapshot> task) {
+//                    if (task.isSuccessful()) {
+//                        DocumentSnapshot document = task.getResult();
+//                        if (document.exists()) {
+//                            // newImageSize 문서가 있는 경우 size+=size
+//                            Log.e(TAG, "DocumentSnapshot data: " + document.getData());
+//
+//                            String newImageSizeStr = document.getData().toString();
+//
+//                            Log.e("daily allMemoSizeStr: ", newImageSizeStr);
+//                            // 중괄호 없애기
+//                            newImageSizeStr = newImageSizeStr.replace("{", "");
+//                            newImageSizeStr = newImageSizeStr.replace("}", "");
+//                            newImageSizeStr = newImageSizeStr.replace("size=", "");
+//
+//                            //setNewImageSize(Integer.valueOf(newImageSizeStr));
+//                        }
+//                    }
+//                }
+//            });
+//
+//            // 리스트로 보여주기
+//            db.collection("daily/" + currentDate + "/memoItem")
+//                    .get()
+//                    .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+//                        @Override
+//                        public void onComplete(@NonNull Task<QuerySnapshot> task) {
+//                            if (task.isSuccessful()) {
+//                                int newImageSize = getNewImageSize();
+//                                int lastIndex = getLastIndex();
+//
+//                                int i = 0;
+//                                int flag = 0;
+//
+//                                for (QueryDocumentSnapshot document : task.getResult()) {
+//                                    String resultStr = "";
+//                                    Log.e(TAG, document.getId() + " => " + document.getData());
+//                                    // get data 예시
+//                                    edit_memo.setText(null);
+//
+//                                    resultStr = document.getData().toString();
+//                                    resultStr = resultStr.replace("{memo=", "");
+//                                    resultStr = resultStr.replace("}", "");
+//                                    Log.e("i", Integer.toString(i));
+//                                    Log.e("lastIndex-newImageSize", Integer.toString(lastIndex-newImageSize));
+//                                    if (lastIndex -  newImageSize< i) {
+//                                        memoItemList.add(new MemoItem(resultStr));
+//                                        flag = 1;
+//                                    }
+//
+//                                    i++;
+//                                }
+//                                if (flag == 1) {
+//                                    memoItemList.remove(memoItemList.size() - 1);
+//                                    memoAdapter.notifyDataSetChanged();
+//                                }
+//
+//                            } else {
+//                                Log.d(TAG, "Error getting documents: ", task.getException());
+//                            }
+//
+//                        }
+//                    });
+//
+//        });
+
+        DatePickerDialog.OnDateSetListener dateSetListener =
+                new DatePickerDialog.OnDateSetListener() {
+                    @Override
+                    public void onDateSet(DatePicker datePicker, int yy, int mm, int dd) {
+                        Log.e("date picker 선택: ", String.format("%d-%d-%d", yy,mm+1,dd));
+                    }
+                };
 
         edit_memo.addTextChangedListener(new TextWatcher() {
             @Override
@@ -158,6 +299,12 @@ public class FragmentDaily extends Fragment {
 
     } //onCreateView End.
 
+    public String removeChar(String str, Integer n) {
+        String front = str.substring(0, n);
+        String back = str.substring(n+1, str.length());
+        return front + back;
+    }
+
     //오늘날짜에 해당하는 데이터 불러와 화면에 보여줌.
     @SuppressLint("LongLogTag")
     public void initFragment() {
@@ -179,18 +326,19 @@ public class FragmentDaily extends Fragment {
                 .get()
                 .addOnSuccessListener(snapShotData -> {
 
-                        Log.e("선택한 날짜에 해당하는 데이터가 없는 경우", dateToday);
-                        db.collection("daily").document(dateToday)
-                                .set(dailyMap)
-                                .addOnSuccessListener(documentReference -> {
-                                    Log.e(TAG, "DocumentSnapshot added with ID: ");
-                                }).addOnFailureListener(e -> {
-                            Log.e(TAG, "Error adding document", e);
-                        });
+                    Log.e("선택한 날짜에 해당하는 데이터가 없는 경우", dateToday);
+                    db.collection("daily").document(dateToday)
+                            .set(dailyMap)
+                            .addOnSuccessListener(documentReference -> {
+                                Log.e(TAG, "DocumentSnapshot added with ID: ");
+                            }).addOnFailureListener(e -> {
+                        Log.e(TAG, "Error adding document", e);
+                    });
 
-                    }
                 }).addOnFailureListener(e -> e.printStackTrace());
     }
+
+
 
 
     @SuppressLint("LongLogTag")
@@ -202,40 +350,63 @@ public class FragmentDaily extends Fragment {
         dailyMap = new HashMap<>();
         dailyMap.put("date", datePicked);
 
-        //Edittext 3개 표시
+        Log.e("daily date 피커", datePicked);
+        
+        // 이전 메모 리사이클러 뷰 지우고 해당 날짜 정보 가져오기
+
+        memoItemList.removeAll(memoItemList);
+        memoAdapter.notifyDataSetChanged();
+
         db.collection("daily")
-            .document(datePicked) //선택한 날짜에 해당하는 데이터 유무 확인
-            .get()
-            .addOnSuccessListener(snapShotData -> {
+                .document(currentDate)//선택한 날짜에 해당하는 데이터 유무 확인
+                .get()
+                .addOnSuccessListener(snapShotData -> {
 
-                    //새로 만들어서 DB에 데이터 추가함
-                    Log.e("선택한 날짜에 해당하는 데이터가 없는 경우", currentDate);
-                    db.collection("daily").document(datePicked)
-                        .set(dailyMap)
-                        .addOnSuccessListener(documentReference -> {
-                            Log.e(TAG, "DocumentSnapshot added with ID: ");
-                        }).addOnFailureListener(e -> {
-                            Log.e(TAG, "Error adding document", e);
-                        });
-                }
-            }).addOnFailureListener(e -> e.printStackTrace());
+                    //Log.e("선택한 날짜에 해당하는 데이터가 없는 경우", currentDate);
+                    db.collection("daily").document(currentDate)
+                            .set(dailyMap)
+                            .addOnSuccessListener(documentReference -> {
+                                Log.e(TAG, "DocumentSnapshot added with ID: ");
+                            }).addOnFailureListener(e -> {
+                        Log.e(TAG, "Error adding document", e);
+                    });
 
+                }).addOnFailureListener(e -> e.printStackTrace());
 
+        //해당날짜에 해당하는 OCR 응답 데이터 화면에 보여줌.
+        db.collection("daily/"+currentDate+"/memoItem")
+                .get()
+                .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+                    @Override
+                    public void onComplete(@NonNull Task<QuerySnapshot> task) {
+                        if (task.isSuccessful()) {
 
+                            for (QueryDocumentSnapshot document : task.getResult())
+                            {
+                                String resultStr = "";
+                                Log.e(TAG, document.getId() + " => " + document.getData());
+                                // get data 예시
+                                edit_memo.setText(null);
+
+                                resultStr = document.getData().toString();
+                                resultStr = resultStr.replace("{memo=","");
+                                resultStr = resultStr.replace("}","");
+                                Log.e("resultStr", resultStr);
+
+                                memoItemList.add(new MemoItem(resultStr));
+                                memoItemList.remove(memoItemList.size()-1);
+                                memoAdapter.notifyDataSetChanged();
+                            }
+
+                        } else {
+                            Log.d(TAG, "Error getting documents: ", task.getException());
+                        }
+
+                    }
+                });
+        
     }
 
-    //EditText 3개에 변경사항 생길때마다 DB 업데이트함.
-    @SuppressLint("LongLogTag")
-    public void updateDB(String field, EditText editText) {
-        //field, editText로 3개 필드 구분해서 업데이트.
-        db.collection("daily").document(currentDate)
-            .update(field, editText.getText().toString())
-            .addOnSuccessListener(documentReference -> {
-                Log.e(TAG, "DocumentSnapshot updated with ID: ");
-            }).addOnFailureListener(e -> {
-                Log.e(TAG, "Error updating document", e);
-            });
-    }
 
     //오늘 날짜 얻기.
     public String getCurrentDate() {

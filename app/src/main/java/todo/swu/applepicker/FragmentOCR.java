@@ -1,9 +1,13 @@
 package todo.swu.applepicker;
 
+import static android.app.Activity.RESULT_OK;
+
 import android.app.Activity;
 import android.content.ContentValues;
+import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
+import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -11,6 +15,7 @@ import android.os.Bundle;
 import androidx.activity.result.ActivityResult;
 import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.ActivityResultRegistry;
 import androidx.activity.result.contract.ActivityResultContract;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.fragment.app.Fragment;
@@ -25,6 +30,7 @@ import android.widget.ImageView;
 import android.widget.Toast;
 
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 
 
@@ -50,11 +56,45 @@ public class FragmentOCR extends Fragment {
         });
 
         cameraBtn.setOnClickListener(v -> {
-            Toast.makeText(getActivity(), "카메라 버튼 누름", Toast.LENGTH_SHORT).show();
+            Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+            activityResultPicture.launch(cameraIntent);
+
         });
 
         return myView; // Inflate the layout for this fragment
     }
+
+    private Uri getImageUri(Context context, Bitmap inImage) {
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        inImage.compress(Bitmap.CompressFormat.JPEG,100,bytes);
+        String path = MediaStore.Images.Media.insertImage(context.getContentResolver(), inImage, "title", null);
+        return Uri.parse(path);
+    }
+
+    Bitmap bitmap;
+
+    ActivityResultLauncher<Intent> activityResultPicture = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            new ActivityResultCallback<ActivityResult>() {
+                @Override
+                public void onActivityResult(ActivityResult result) {
+                    Uri cameraUri;
+                    String cameraImagePath="";
+                    if(result != null) {
+                        Bundle extras = result.getData().getExtras();
+                        bitmap = (Bitmap) extras.get("data");
+                        ocrImageView.setImageBitmap(bitmap);
+                        Log.e(getImageUri(getContext(), bitmap).toString(), "URI 가져옴");
+                        cameraUri = getImageUri(getContext(), bitmap);
+                        cameraImagePath = getPathFromUri(getActivity(), cameraUri);
+                        NetworkTask networkTask = new NetworkTask(cameraImagePath);
+                        networkTask.execute();
+                    }
+
+                }
+            }
+    );
+
 
     ActivityResultLauncher<String> startActivityResult = registerForActivityResult(
             new ActivityResultContracts.GetContent(),
